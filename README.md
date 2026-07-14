@@ -1,6 +1,6 @@
 # Credit Card Fraud Detection
 
-A machine learning project that detects fraudulent credit card transactions using classic classification algorithms — Logistic Regression, Support Vector Machines, Naive Bayes, K-Means, K-Nearest Neighbors, and Random Forest — on a highly imbalanced, real-world transaction dataset.
+A machine learning project that detects fraudulent credit card transactions using classic classification algorithms — Logistic Regression, Naive Bayes, K-Nearest Neighbors, Random Forest, and Support Vector Machines — on a highly imbalanced, real-world transaction dataset.
 
 ![Class Distribution](images/class_distribution.png)
 
@@ -18,13 +18,16 @@ Credit card fraud costs banks and consumers billions of dollars every year, and 
 
 | File | Description |
 |---|---|
-| `Credit_Card_Fraud_Detection.ipynb` | The main Jupyter notebook containing the full analysis, modeling, and evaluation |
-| `creditcard.csv` | The dataset (see below) |
+| `Credit_Card_Fraud_Detection.ipynb` | The main Jupyter notebook — full analysis, modeling, and evaluation |
+| `Credit_Card_Fraud_Detection_Research_Paper_(Anshika_Gupta).pdf` | An accompanying academic write-up of this project, covering related work, methodology, and results in paper format |
+| `images/` | Charts referenced in this README |
 | `README.md` | This file |
 
-> **Note:** This repo previously contained two exploratory notebooks. They have been consolidated into a single, more complete notebook — see [Notebook Consolidation](#-notebook-consolidation) below for details on that decision.
+> The dataset itself (`creditcard.csv`) is **not** stored in this repo — it's too large for GitHub. See below for where to get it.
 
 ## 📊 Dataset
+
+**Download:** [Credit Card Fraud Detection dataset on Kaggle](https://www.kaggle.com/mlg-ulb/creditcardfraud)
 
 The dataset contains transactions made by European cardholders over two days in September 2013. It has **284,807 transactions**, of which only **492 are fraudulent** (~0.17%).
 
@@ -35,7 +38,9 @@ The dataset contains transactions made by European cardholders over two days in 
 
 Because the original features are PCA components, there's no raw feature-level interpretability (e.g., "merchant category" or "location") — the modeling challenge is purely about handling scale and extreme class imbalance well.
 
-*Dataset originally released by the [Machine Learning Group at ULB](https://www.kaggle.com/mlg-ulb/creditcardfraud) on Kaggle.*
+Download `creditcard.csv` from the Kaggle link above and place it in the same folder as the notebook before running it.
+
+*Dataset originally released by the [Machine Learning Group at ULB](https://www.kaggle.com/mlg-ulb/creditcardfraud).*
 
 ## 🔍 Exploratory Data Analysis
 
@@ -57,35 +62,45 @@ The notebook trains and evaluates the following algorithms, in order of increasi
 3. **Naive Bayes (Gaussian)** — fast probabilistic baseline
 4. **K-Means Clustering** — unsupervised approach repurposed for a binary classification comparison
 5. **K-Nearest Neighbors (KNN)**
-6. **Random Forest Classifier** — ensemble method, generally the strongest performer
+6. **Random Forest Classifier** — ensemble method
 
 ### Why not just look at accuracy?
 
-Because fraud is so rare, accuracy is misleading — a model can score >99% while catching almost no fraud. Instead, the notebook focuses on:
+Because fraud is so rare, accuracy is misleading — a model can score >99% while catching almost no fraud. Instead, this project focuses on:
 
 - **Precision** — of the transactions flagged as fraud, how many actually are?
-- **Recall** — of all the actual fraud, how much did the model catch?
+- **Recall (Sensitivity)** — of all the actual fraud, how much did the model catch?
 - **F1-Score** — the balance between precision and recall
 - **AUC-ROC** — how well the model separates the two classes across all thresholds
+
+Of these, **recall** matters most here: a missed fraud case (false negative) is generally more costly than a false alarm (false positive), so models are compared with an eye toward maximizing recall without destroying precision.
 
 ![Logistic Regression Confusion Matrix](images/confusion_matrix_logreg.png)
 
 ## 📈 Results
 
-| Model | Accuracy | Precision | Recall | F1-Score | AUC |
-|---|---|---|---|---|---|
-| Logistic Regression | 99.90% | 71.07% | 63.24% | 66.93% | 0.934 |
-| SVM (linear kernel) | 99.94% | 83.21% | 80.15% | 81.65% | 0.901 |
-| SVM (tuned, RBF kernel) | — | — | 83.09% | — | ~0.97 |
-| Naive Bayes | 99.30% | 14.11% | 66.18% | 23.26% | 0.828 |
-| Random Forest | 99.96% | 98.72% | 78.57% | 87.50% | — |
+*(as reported in the accompanying research paper, based on this notebook's models — 70/30 train-test split)*
 
-*(Metrics pulled directly from the executed notebook outputs. A few cells in the K-Means/KNN/Random Forest section reuse variable names between models — worth double-checking if you re-run and rely on those exact figures.)*
+| Model | Accuracy | Sensitivity (Recall) | Specificity | Precision | F1 Score | AUC |
+|---|---|---|---|---|---|---|
+| **Logistic Regression** | 98.83% | **86.03%** | 98.85% | 10.98% | 19.47% | 95.36% |
+| Naive Bayes | 99.30% | 66.18% | 99.36% | 14.11% | 23.26% | 82.77% |
+| K-Nearest Neighbors | 99.92% | 68.09% | 99.98% | 82.05% | 74.42% | 84.03% |
+| Random Forest | 99.95% | 79.41% | 99.98% | 87.10% | 83.08% | **95.71%** |
+| SVM | 99.94% | 80.15% | 99.97% | 83.21% | 81.65% | 90.06% |
 
-**Random Forest** comes out on top on precision and F1-score, meaning it flags fraud confidently without too many false alarms. The **tuned SVM (RBF kernel)** achieves the best recall/AUC trade-off, catching more actual fraud cases at the cost of a few more false positives. Which one you'd deploy in practice depends on whether your priority is minimizing false alarms (Random Forest) or catching as much fraud as possible (tuned SVM) — a classic precision/recall trade-off in fraud detection.
+<p float="left">
+  <img src="images/roc_logreg.png" width="45%" />
+  <img src="images/roc_svm_rbf.png" width="45%" />
+</p>
 
-![SVM RBF ROC Curve](images/roc_svm_rbf.png)
+**Logistic Regression** achieves the highest recall by a wide margin — catching the most actual fraud cases — but at the cost of very low precision (lots of false alarms). **Random Forest** offers the best overall balance, with the highest precision, F1-score, and AUC. Which one you'd deploy in practice depends on your priority: catching as much fraud as possible even with more false positives (Logistic Regression), or a more balanced, confident flagging system (Random Forest).
+
 ![Random Forest Confusion Matrix](images/confusion_matrix_randomforest.png)
+
+## 📄 Research Paper
+
+This repo includes `Credit_Card_Fraud_Detection_Research_Paper_(Anshika_Gupta).pdf`, an unpublished academic write-up of this project completed as coursework at The NorthCap University. It covers related work from other published fraud-detection studies, a fuller methodology section (including Borderline-SMOTE for class balancing), and a formal results comparison across all five models — worth a read if you want more context beyond the notebook itself.
 
 ## 🛠️ Tech Stack
 
@@ -105,24 +120,15 @@ Because fraud is so rare, accuracy is misleading — a model can score >99% whil
    ```bash
    pip install pandas numpy matplotlib seaborn scikit-learn jupyter
    ```
-3. Make sure `creditcard.csv` is in the same directory as the notebook.
+3. Download `creditcard.csv` from [Kaggle](https://www.kaggle.com/mlg-ulb/creditcardfraud) and place it in the repo folder, alongside the notebook.
 4. Launch the notebook:
    ```bash
    jupyter notebook Credit_Card_Fraud_Detection.ipynb
    ```
 
-## 📝 Notebook Consolidation
-
-This repo originally had two notebooks covering very similar ground. After reviewing both in detail:
-
-- **Notebook 1** (kept, now `Credit_Card_Fraud_Detection.ipynb`) has the most complete modeling coverage — it's the only one with a full SVM hyperparameter search across three kernels — plus more thorough step-by-step markdown explanations, and no faulty aggregate results table.
-- **Notebook 2** (removed) had some nice extra preprocessing touches (duplicate removal, a correlation heatmap, SMOTE-based class balancing) but its final model-comparison table reused variable names between the Naive Bayes and Random Forest sections, making some of its reported numbers unreliable, and it dropped the SVM section entirely.
-
-Rather than maintain two overlapping, partially-buggy notebooks, they've been consolidated into one. If you'd like, the duplicate-removal and SMOTE-balancing ideas from Notebook 2 would be a great addition to bring back into the kept notebook as a follow-up improvement.
-
 ## 🔮 Future Improvements
 
-- Balance the training data with SMOTE or class weighting and compare against the current (unbalanced) results
+- Balance the training data with SMOTE / Borderline-SMOTE or class weighting and compare against the current (unbalanced) results
 - Try gradient-boosted models (XGBoost, LightGBM)
 - Build a simple inference script / API for scoring new transactions
 - Track experiments with something like MLflow for cleaner model comparison
